@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+
+<style type="text/css">
+
+  body {
+    font-family: "Proxima-Nova",Arial,Helvetica,sans-serif;
+    font-size: 12px;
+  }
+
+  .g-num { fill:#c12726; }
+  .g-num2 { fill:#e0e0e0; }
+
+  .g-labels {
+    font-family: "Proxima-Nova",Arial,Helvetica,sans-serif;
+    font-weight: bold;
+  }
+
+  .x.axis line,
+  .y.axis line,
+  .x.axis text,
+  .domain {
+    display: none;
+  }
+
+  .y.axis text {
+    font-weight: bold;
+    fill: #c12726;
+  }
+  .y.axis-r text {
+    transform: translateX(145px);
+  }
+</style>
+</head>
+<body>
+  <div class="g-chart"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+
+<script>
+var margin = {top: 0, right: 100, bottom: 0, left: 100};
+var width =   350 - margin.left - margin.right,
+  height = 70 - margin.top - margin.bottom;
+var barHeight = 16;
+
+//Appends the svg to the chart-container div
+var svg = d3.select(".g-chart").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+//Creates the xScale
+var xScale = d3.scale.linear().range([0,width]);
+
+//Creates the yScale
+var y0 = d3.scale.ordinal()
+  .rangeBands([70, 0], 0)
+  .domain(["isDead", "hasDiabetes", "gender"]);
+
+  //Defines the y axis styles
+  var yAxis = d3.svg.axis()
+    .scale(y0)
+    .orient("left");
+  var yAxisR = d3.svg.axis()
+    .scale(y0)
+    .orient("right");
+
+  //Defines the y axis styles
+  var xAxis = d3.svg.axis().scale(xScale);
+
+//Local data
+var data = [
+  {"category":"isDead","num":15, "num2": 100},
+  {"category":"hasDiabetes","num":54, "num2": 100},
+  {"category":"gender","num":26, "num2": 100}
+];
+
+//Draw the chart
+ready(data);
+
+function ready(data) {
+
+  //FORMAT data
+  // data.forEach(function(d) {
+  //   d.num = +d.num;
+  //   d.num2 = +d.num2;
+  // });
+
+  //Sets the max for the xScale
+  var maxX = d3.max(data, function(d) { return d.num2; });
+
+  //Gets the min for bar labeling
+  var minX = d3.min(data, function(d) { return d.num; });
+
+  //Defines the xScale max
+  xScale.domain([0, maxX ]);
+
+  //Appends the y axis
+  var yAxisGroup = svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+    //Appends the y axis
+  var yAxisGroup = svg.append("g")
+    .attr("class", "y axis axis-r")
+    .call(yAxisR);
+
+  //Appends the x axis
+  var xAxisGroup = svg.append("g")
+    .attr("class", "x axis")
+    .call(xAxis);
+
+  //Binds the data to the bars
+  var categoryGroup = svg.selectAll(".g-category-group")
+    .data(data)
+    .enter()
+    .append("g")
+    .attr("class", "g-category-group")
+    .attr("transform", function(d) {
+      return "translate(0," + y0(d.category) + ")";
+    });
+
+  //Appends background bar
+  var bars2 = categoryGroup.append("rect")
+    .attr("width", function(d) { return xScale(d.num2); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num2")
+    .attr("transform", "translate(0,4)");
+
+  //Appends main bar
+  var bars = categoryGroup.append("rect")
+    .attr("width", function(d) { return xScale(d.num); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num")
+    .attr("transform", "translate(0,4)");
+
+  //Binds data to labels
+  var labelGroup = svg.selectAll("g-num")
+    .data(data)
+    .enter()
+    .append("g")
+    .attr("class", "g-label-group")
+    .attr("transform", function(d) {
+      return "translate(0," + y0(d.category) + ")";
+    });
+
+  //Appends main bar labels
+  var barLabels = labelGroup.append("text")
+    .text(function(d) {return  d.num + "%";})
+    .attr("x", function(d) {
+      if (minX > 32) {
+        return xScale(d.num) - 37;}
+      else {
+        return xScale(d.num) + 6;}})
+    .style("fill", function(d){
+      if (minX > 32) {
+        return "white";}
+      else {
+        return "#696969";}})
+    .attr("y", y0.rangeBand()/1.6 )
+    .attr("class", "g-labels");
+}
+</script>
+</body>
+</html>

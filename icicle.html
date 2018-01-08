@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Zoom Icicle</title>
+    <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
+    <style>
+      rect { stroke: #fff; }
+    </style>
+  </head>
+  <body>
+    <script>
+
+    var width = 960,
+        height = 500;
+
+    var x = d3.scale.linear().range([0, width]);
+    var y = d3.scale.linear().range([0, height]);
+
+    var color = d3.scale.category20c();
+
+    var alphaColors = {
+      A: 'rgba(232, 94, 190,1)',
+      B: 'rgba(0, 155, 255,1)',
+      C: 'rgba(153,63,0,1)',
+      D: 'rgba(76,0,92,1)',
+      E: 'rgba(125,25,25,1)',
+      F: 'rgba(0,92,49,1)',
+      G: 'rgba(43,206,72,1)',
+      H: 'rgba(255,204,153,1)',
+      I: 'rgba(128,128,128,1)',
+      J: 'rgba(148,255,181,1)',
+      K: 'rgba(143,124,0,1)',
+      L: 'rgba(157,204,0,1)',
+      M: 'rgba(194,0,136,1)',
+      N: 'rgba(0,51,128,1)',
+      O: 'rgba(255,164,5,1)',
+      P: 'rgba(255,168,187,1)',
+      Q: 'rgba(66,102,0,1)',
+      R: 'rgba(255,0,16,1)',
+      S: 'rgba(94,241,242,1)',
+      T: 'rgba(0,153,143,1)',
+      U: 'rgba(224,255,102,1)',
+      V: 'rgba(116,10,255,1)',
+      W: 'rgba(153,0,0,1)',
+      X: 'rgba(255,255,128,1)',
+      Y: 'rgba(255,255,0,1)',
+      Z: 'rgba(255,80,5,1)'
+    }
+
+    var partition = d3.layout.partition()
+        .children(function(d) { return isNaN(d.value) ? d3.entries(d.value) : null; })
+        .value(function(d) { return d.value; });
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var group = svg.selectAll("g");
+
+    d3.json("backend/result.json", function(error, root) {
+
+      if (error) throw error;
+
+      group = group
+        .data(partition(d3.entries(root)[0]))
+        .enter()
+        .append("g")
+        .attr("transform", function(d) {
+          return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
+        })
+        .on("click", clicked);
+
+      group.append("rect")
+      .attr("width", function(d) { return x(d.dx); })
+      .attr("height", function(d) { return y(d.dy); })
+      .style("fill", function(d) { return colorize(d); })
+      .style("fill-rule", "evenodd");
+
+      // x2.domain([0, 500]);
+      // y2.domain([d.y, 1]).range([d.y ? 20 : 0, height]);
+
+      group.append('rect')
+      .attr("width", function(d) { return 10; })
+      .attr("height", function(d) { return 20; })
+      .style("fill", function(d) { return '#ccc'; });
+
+      group.append("text")
+        .attr("y", function(d) { return y(d.dy)/2 + 5; })
+        .attr("x", function(d) { return 10; })
+        .attr("width", function(d) { return x(d.dx); })
+        .attr("height", function(d) { return y(d.dy); })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "20px")
+        .text(function(d) {
+          if (x(d.dx) > 40) {
+            return d.key;
+          } else {
+            return '';
+          }
+
+          });
+    });
+
+    function colorize(d) {
+
+      var c = '';
+
+      if (d.key.length === 2) {
+        c = alphaColors[d.key[0]].replace('1)', '.8)');
+      } else if (d.key.length === 3) {
+        c = alphaColors[d.key[0]].replace('1)', '.6)');
+      } else if (d.key.length === 4) {
+        c = alphaColors[d.key[0]].replace('1)', '.4)');
+      } else if (d.key.length === 5) {
+        c = alphaColors[d.key[0]].replace('1)', '.2)');
+      } else {
+        c = alphaColors[d.key[0]];
+      }
+
+      return c;
+    }
+
+    function clicked(d) {
+
+      x.domain([d.x, d.x + d.dx]);
+      y.domain([d.y, 1]).range([d.y ? 20 : 0, height]);
+
+      group.transition()
+          .duration(750)
+          .attr("transform", function(d) {
+            return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
+          })
+          .selectAll('rect')
+            .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+            .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+
+            group.selectAll('text').text(function(d) {
+              if ((x(d.x + d.dx) - x(d.x)) > 40) {
+                return d.key;
+              } else {
+                return '';
+              }
+
+              });
+    }
+
+    </script>
+  </body>
+</html>
