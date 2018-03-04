@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>Zoom Icicle</title>
     <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
+    <script type="text/javascript" src="backend/diagnosisAttributes.json"></script>
     <style>
       rect { stroke: #fff; }
     </style>
@@ -79,105 +80,49 @@
         .children(function(d) { return isNaN(d.value) ? d3.entries(d.value) : null; })
         .value(function(d) { return d.value; });
 
-    var svg = d3.select(".i-chart").append("svg")
+    var group = d3.select(".i-chart").append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .selectAll("g");
 
-    var group = svg.selectAll("g");
+    var diagnosisAttrs;
 
-    d3.json("backend/result.json", function(error, root) {
+    function init() {
 
-      if (error) throw error;
+      diagnosisAttrs = JSON.parse(diagnosisAttributes);
 
-      group = group
+      drawIcicleGraph();
+    }
+
+    init();
+
+    function drawIcicleGraph() {
+
+      d3.json("backend/result.json", function(error, root) {
+
+        if (error) throw error;
+
+        group = group
         .data(partition(d3.entries(root)[0]))
         .enter()
         .append("g")
         .attr("transform", function(d) { return 'translate(' + x(d.x) + ', ' + y(d.y) +')'; })
+        .attr('class', function(d) { return d.key; })
         .on("click", clicked);
 
-      group.append("rect")
-      .attr("width", function(d) { return x(d.dx); })
-      .attr("height", function(d) { return y(d.dy); })
-      .style("fill", function(d) { return colorize(d); })
-      .style("fill-rule", "evenodd");
+        group.append("rect")
+        .attr("width", function(d) { return x(d.dx); })
+        .attr("height", function(d) { return y(d.dy); })
+        .style("fill", function(d) { return colorize(d); })
+        .style("fill-rule", "evenodd");
 
+        group.each(function(d,i) {
+          if (x(d.dx) > 200) {
+            showDiagnosisAnnotation(d3.select(this));
+          }
+        });
 
-      var data = [
-        {"category":"isDead","num":15, "num2": 100},
-        {"category":"hasDiabetes","num":54, "num2": 100},
-        {"category":"gender","num":26, "num2": 100}
-      ];
-      var margin = {top: 30, right: 100, bottom: 0, left: 100};
-      var width2 =   350 - margin.left - margin.right,
-        height2 = 100 - margin.top - margin.bottom;
-      var barHeight = 16;
-      //Creates the xScale
-      var xScale = d3.scale.linear().range([0,width2]);
-      var maxX = d3.max(data, function(d) { return d.num2; });
-      var minX = d3.min(data, function(d) { return d.num; });
-      //Defines the xScale max
-      xScale.domain([0, maxX ]);
-
-      //Creates the yScale
-      var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["isDead", "hasDiabetes", "gender"]);
-      //Defines the y axis styles
-      var yAxis = d3.svg.axis().scale(y0).orient("left");
-      var yAxisR = d3.svg.axis().scale(y0).orient("right");
-      //Defines the y axis styles
-      var xAxis = d3.svg.axis().scale(xScale);
-      group.each(function(d) {
-
-          if (d.key === 'diagnosis' || x(d.dx) > 200) {
-
-             var thisGroup = d3.select(this);
-
-             thisGroup.append("g").attr("class", "y axis").call(yAxis);
-             thisGroup.append("g").attr("class", "y axis axis-r").call(yAxisR);
-             thisGroup.append("g").attr("class", "x axis").call(xAxis);
-
-             var bars = thisGroup.append("svg")
-               .attr("width", width2 + margin.left + margin.right)
-               .attr("height", height2 + margin.top + margin.bottom)
-               .append("g")
-               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-               .selectAll(".g-category-group")
-                 .data(data)
-                 .enter()
-                 .append("g")
-                 .attr("transform", function(d) {
-                   return "translate(0," + y0(d.category) + ")";
-                 });
-
-             bars.append("rect")
-               .attr("width", function(d) { return xScale(d.num2); })
-               .attr("height", barHeight - 1 )
-               .attr("class", "g-num2")
-               .attr("transform", "translate(0,2)");
-             bars.append("rect")
-               .attr("width", function(d) { return xScale(d.num); })
-               .attr("height", barHeight - 1 )
-               .attr("class", "g-num")
-               .attr("transform", "translate(0,2)");
-
-              bars.append("text")
-                 // .attr("x", 20)
-                 .attr("y", 10 )
-                 .style("fill", function(d){ return "#000"; })
-                 .attr("font-size", "14px")
-                 .text(function(d) { console.log('labels', d.num); return  d.num + "%";});
-         }
-      });
-
-      // x2.domain([0, 500]);
-      // y2.domain([d.y, 1]).range([d.y ? 20 : 0, height]);
-
-      // group.append("rect")
-      // .attr("width", function(d) { return 10; })
-      // .attr("height", function(d) { return 20; })
-      // .style("fill", function(d) { return '#ccc'; });
-
-      group.append("text")
+        group.append("text")
         .attr("y", function(d) { return 20; })
         .attr("x", function(d) { return 10; })
         .attr("width", function(d) { return x(d.dx); })
@@ -191,8 +136,10 @@
             return '';
           }
 
-          });
-    });
+        });
+      });
+
+    }
 
     function colorize(d) {
 
@@ -226,23 +173,113 @@
             return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
           })
           .selectAll('rect')
-            .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
-            .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+            .attr("width", function(d) {
+              return x(d.x + d.dx) - x(d.x); })
+            .attr("height", function(d) {
+              return y(d.y + d.dy) - y(d.y); });
+              ;
 
-            group.selectAll('text').text(function(d) {
-              if ((x(d.x + d.dx) - x(d.x)) > 40) {
-                return d.key;
-              } else {
-                return '';
-              }
+      // current node and all children
+      d3.selectAll("[class^='" + d3.select(this).attr('class') + "']").each(function(d,i) {
+        if(x(d.x + d.dx) - x(d.x) > 200) {
+          showDiagnosisAnnotation(d3.select(this));
+        }
+      });
 
-              });
+      group.selectAll('text').text(function(d) {
+        if ((x(d.x + d.dx) - x(d.x)) > 40) {
+          return d.key;
+        } else {
+          return '';
+        }
+      });
+
     }
 
+
+function getNodeData(diagnosis) {
+
+  console.log('getNodeData',diagnosisAttrs[diagnosis]);
+
+  var d = diagnosisAttrs[diagnosis];
+
+  if (d === undefined) {
+    return [
+      {"category":"-","num":0, "num2": 100},
+      {"category":"-","num":0, "num2": 100},
+      {"category":"-","num":0, "num2": 100}
+    ];
+  } else {
+    return [
+      {"category":"isDead","num":d.lifeStatus.deadPercent, "num2": 100},
+      {"category":"hasDiabetes","num":d.diabetes.yesPercent, "num2": 100},
+      {"category":"female","num":d.gender.femalePercent, "num2": 100}
+    ];
+  }
+}
+
+function showDiagnosisAnnotation(node) {
+
+  if (!node.select('svg').empty()) node.select('svg').remove();
+  if (!node.select('g').empty()) node.select('g').remove();
+
+  var margin = {top: 30, right: 100, bottom: 0, left: 100};
+  var width2 =   350 - margin.left - margin.right,
+    height2 = 100 - margin.top - margin.bottom;
+  var barHeight = 16;
+
+  var nodeData = getNodeData(node.attr('class'));
+
+  //Creates the xScale
+  var xScale = d3.scale.linear().range([0,width2]);
+  var maxX = d3.max(nodeData, function(d) { return d.num2; });
+  var minX = d3.min(nodeData, function(d) { return d.num; });
+  //Defines the xScale max
+  xScale.domain([0, maxX ]);
+  //Defines the y axis styles
+  var xAxis = d3.svg.axis().scale(xScale);
+
+  //Creates the yScale
+  var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["isDead", "hasDiabetes", "gender"]);
+  //Defines the y axis styles
+  var yAxis = d3.svg.axis().scale(y0).orient("left");
+  var yAxisR = d3.svg.axis().scale(y0).orient("right");
+
+  node.append("g").attr("class", "y axis").call(yAxis);
+  node.append("g").attr("class", "y axis axis-r").call(yAxisR);
+  node.append("g").attr("class", "x axis").call(xAxis);
+
+  var bars = node.append("svg")
+    .attr("width", width2 + margin.left + margin.right)
+    .attr("height", height2 + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .selectAll(".g-category-group")
+      .data(nodeData)
+      .enter()
+      .append("g")
+      .attr("transform", function(d) {
+        return "translate(0," + y0(d.category) + ")";
+      });
+  bars.append("rect")
+    .attr("width", function(d) { return xScale(d.num2); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num2")
+    .attr("transform", "translate(0,2)");
+  bars.append("rect")
+    .attr("width", function(d) { return xScale(d.num); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num")
+    .attr("transform", "translate(0,2)");
+
+   bars.append("text")
+      .attr("y", 10 )
+      .style("fill", function(d){ return "#000"; })
+      .attr("font-size", "14px")
+      .text(function(d) { console.log('labels', d.num); return  d.num + "%";});
+
+}
+
     </script>
-
-
-
-
   </body>
 </html>
