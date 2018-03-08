@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Zoom Icicle</title>
     <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
-    <script type="text/javascript" src="backend/diagnosisAttributes.json"></script>
+    <!-- <script type="text/javascript" src="backend/fullDiagnosisAttrs.json"></script> -->
     <style>
       rect { stroke: #fff; }
     </style>
@@ -36,7 +36,6 @@
   <body>
     <div class="g-chart"></div>
     <div class="i-chart"></div>
-
 
     <script>
 
@@ -89,15 +88,23 @@
 
     function init() {
 
-      diagnosisAttrs = JSON.parse(diagnosisAttributes);
+      // url (required), options (optional)
+      fetch('backend/fullDiagnosisAttrs.json', {
+          method: 'get'
+      }).then(function(response) {
+        return response.json();
+      }).then(function(json){
+        console.log(json);
+        diagnosisAttrs = json;
+        drawIcicleGraph();
+    });
 
-      drawIcicleGraph();
     }
 
     init();
 
     function drawIcicleGraph() {
-
+console.log(1);
       d3.json("backend/result.json", function(error, root) {
 
         if (error) throw error;
