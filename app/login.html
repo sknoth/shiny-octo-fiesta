@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="assets/img/favicon.ico">
+
+    <title>Visual Medical Data Analysis</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="assets/css/floating-labels.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <form class="form-signin" id="loginForm">
+
+      <div class="error-box alert alert-danger">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <strong>Error!</strong> <span class="error-msg"></span>
+      </div>
+
+      <div class="text-center mb-4">
+        <h1 class="h3 mb-3 font-weight-normal">Visual Medical Data Analysis</h1>
+        <p>Welcome, please login to use the the visual medical data analysis tool.</p>
+      </div>
+
+      <div class="form-label-group">
+        <input type="text" id="inputName" class="form-control"
+          placeholder="Name" required autofocus>
+        <label for="inputName">Name</label>
+      </div>
+
+      <div class="form-label-group">
+        <input type="password" id="inputPassword" class="form-control"
+          placeholder="Password" required>
+        <label for="inputPassword">Password</label>
+      </div>
+
+      <div class="checkbox mb-3">
+        <label>
+          <input type="checkbox" value="remember-me"> Remember me
+        </label>
+      </div>
+
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+      <p class="mt-5 mb-3 text-muted text-center">&copy; 2017-2018</p>
+    </form>
+  </body>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+  <script>
+$(document).ready(function() {
+
+  if (sessionStorage.getItem('msg')) {
+    $('.error-msg').html(sessionStorage.getItem('msg'));
+    $('.error-box').show();
+    sessionStorage.removeItem('msg');
+    sessionStorage.removeItem('jwt');
+  } else {
+    $('.error-box').hide();
+  }
+
+  $("#loginForm").submit(function(e) {
+      $.ajax({
+        type: "POST",
+          url: 'http://localhost:5000/login',
+          data: {
+            name: encodeURIComponent($("#inputName").val()),
+            password: encodeURIComponent($("#inputPassword").val())
+          },
+          success:function(data){
+              console.log('data',data);
+              if(data) {
+                sessionStorage.setItem('jwt', data)
+                window.location.href = "ICDChart_Icicle.html";
+              } else {
+                  alert("Please try again");
+              }
+          },error:function(e){console.log('err');}
+      });
+      return false;
+  });
+
+  });
+  </script>
+</html>
