@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Zoom Icicle</title>
+    <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
+    <!-- <script type="text/javascript" src="backend/fullDiagnosisAttrs.json"></script> -->
+    <style>
+      rect { stroke: #fff; }
+    </style>
+    <style type="text/css">
+
+      body {
+        font-family: "Proxima-Nova",Arial,Helvetica,sans-serif;
+        font-size: 12px;
+      }
+
+      .g-num { fill:#c12726; }
+      .g-num2 { fill:#e0e0e0; }
+
+      .x.axis line,
+      .y.axis line,
+      .x.axis text,
+      .domain {
+        display: none;
+      }
+
+      .y.axis text {
+        fill: #000;
+      }
+      .y.axis-r text {
+        transform: translateX(10px);
+        transform: translateY(28px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="g-chart"></div>
+    <div class="i-chart"></div>
+
+    <script>
+
+    var width = 1200,
+        height = 800;
+
+    var x = d3.scale.linear().range([0, width]);
+    var y = d3.scale.linear().range([0, height]);
+
+    var alphaColors = {
+      diagnosis: 'rgba(230, 245, 245, 1)',
+      A: 'rgba(232, 94, 190,1)',
+      B: 'rgba(0, 155, 255,1)',
+      C: 'rgba(117, 68, 177,1)',
+      D: 'rgba(76,0,92,1)',
+      E: 'rgba(125,25,25,1)',
+      F: 'rgba(0,92,49,1)',
+      G: 'rgba(0, 174, 126,1)',
+      H: 'rgba(1, 0, 103,1)',
+      I: 'rgba(128,128,128,1)',
+      J: 'rgba(149, 0, 58,1)',
+      K: 'rgba(143,124,0,1)',
+      L: 'rgba(0, 185, 23,1)',
+      M: 'rgba(194,0,136,1)',
+      N: 'rgba(0,51,128,1)',
+      O: 'rgba(255,164,5,1)',
+      P: 'rgba(229, 111, 254,1)',
+      Q: 'rgba(66,102,0,1)',
+      R: 'rgba(255,0,16,1)',
+      S: 'rgba(0, 125, 181,1)',
+      T: 'rgba(0,153,143,1)',
+      U: 'rgba(107, 104, 130,1)',
+      V: 'rgba(116,10,255,1)',
+      W: 'rgba(153,0,0,1)',
+      X: 'rgba(0, 95, 57,1)',
+      Y: 'rgba(0, 71, 84,1)',
+      Z: 'rgba(255,80,5,1)'
+    }
+
+    var partition = d3.layout.partition()
+        .children(function(d) { return isNaN(d.value) ? d3.entries(d.value) : null; })
+        .value(function(d) { return d.value; });
+
+    var group = d3.select(".i-chart").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .selectAll("g");
+
+    var diagnosisAttrs;
+
+    function init() {
+
+      // url (required), options (optional)
+      fetch('backend/dfa.json', {
+          method: 'get'
+      }).then(function(response) {
+        return response.json();
+      }).then(function(json){
+        diagnosisAttrs = json;
+        drawIcicleGraph();
+    });
+
+    }
+
+    init();
+
+    function drawIcicleGraph() {
+
+      d3.json("backend/result.json", function(error, root) {
+
+        if (error) throw error;
+
+        group = group
+        .data(partition(d3.entries(root)[0]))
+        .enter()
+        .append("g")
+        .attr("transform", function(d) { return 'translate(' + x(d.x) + ', ' + y(d.y) +')'; })
+        .attr('class', function(d) { return d.key; })
+        .on("click", clicked);
+
+        group.append("rect")
+        .attr("width", function(d) { return x(d.dx); })
+        .attr("height", function(d) { return y(d.dy); })
+        .style("fill", function(d) { return colorize(d); })
+        .style("fill-rule", "evenodd");
+
+        group.each(function(d,i) {
+          if (x(d.dx) > 200) {
+            showDiagnosisAnnotation(d3.select(this));
+          }
+        });
+
+        group.append("text")
+        .attr("y", function(d) { return 20; })
+        .attr("x", function(d) { return 10; })
+        .attr("width", function(d) { return x(d.dx); })
+        .attr("height", function(d) { return y(d.dy); })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "16px")
+        .text(function(d) {
+          if (x(d.dx) > 35) {
+            return d.key;
+          } else {
+            return '';
+          }
+
+        });
+      });
+
+    }
+
+    function colorize(d) {
+
+      var c = '';
+
+      if (d.key.length === 2) {
+        c = alphaColors[d.key[0]].replace('1)', '.8)');
+      } else if (d.key.length === 3) {
+        c = alphaColors[d.key[0]].replace('1)', '.6)');
+      } else if (d.key.length === 4 || d.key[4] === '+') {
+        c = alphaColors[d.key[0]].replace('1)', '.4)');
+      } else if (d.key.length === 5 && d.key[4] != '+') {
+        c = alphaColors[d.key[0]].replace('1)', '.2)');
+      } else if (d.key === 'diagnosis') {
+        c = alphaColors[d.key];
+      } else {
+        c = alphaColors[d.key[0]];
+      }
+
+      return c;
+    }
+
+    function clicked(d) {
+
+      x.domain([d.x, d.x + d.dx]);
+      y.domain([d.y, 1]).range([d.y ? 20 : 0, height]);
+
+      group.transition()
+          .duration(750)
+          .attr("transform", function(d) {
+            return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
+          })
+          .selectAll('rect')
+            .attr("width", function(d) {
+              return x(d.x + d.dx) - x(d.x); })
+            .attr("height", function(d) {
+              return y(d.y + d.dy) - y(d.y); });
+              ;
+
+      // current node and all children
+      d3.selectAll("[class^='" + d3.select(this).attr('class') + "']").each(function(d,i) {
+        if(x(d.x + d.dx) - x(d.x) > 200) {
+          showDiagnosisAnnotation(d3.select(this));
+        }
+      });
+
+      group.selectAll('text').text(function(d) {
+        if ((x(d.x + d.dx) - x(d.x)) > 40) {
+          return d.key;
+        } else {
+          return '';
+        }
+      });
+
+    }
+
+
+function getNodeData(diagnosis) {
+
+
+  var d = diagnosisAttrs[diagnosis];
+  console.log('getNodeData d',d);
+
+  if (d === undefined) {
+    return [
+      {"category":"-","num":0, "num2": 100},
+      {"category":"-","num":0, "num2": 100},
+      {"category":"-","num":0, "num2": 100}
+    ];
+  } else {
+    return [
+      {"category":"Dead (y/n):","num":d.lifeStatus.deadPercent, "num2": 100},
+      {"category":"Diabetes (y/n):","num":d.diabetes.yesPercent, "num2": 100},
+      {"category":"Gender (f/m):","num":d.gender.femalePercent, "num2": 100}
+    ];
+  }
+}
+
+function showDiagnosisAnnotation(node) {
+console.log(1);
+  if (!node.select('svg').empty()) node.select('svg').remove();
+  if (!node.select('g').empty()) node.select('g').remove();
+
+  var margin = {top: 30, right: 10, bottom: 0, left: 94};
+  var width2 =   250 - margin.left - margin.right,
+    height2 = 100 - margin.top - margin.bottom;
+  var barHeight = 16;
+
+  var nodeData = getNodeData(node.attr('class'));
+console.log(2,nodeData);
+  //Creates the xScale
+  var xScale = d3.scale.linear().range([0,width2]);
+  var maxX = d3.max(nodeData, function(d) { return d.num2; });
+  var minX = d3.min(nodeData, function(d) { return d.num; });
+  //Defines the xScale max
+  xScale.domain([0, maxX ]);
+  //Defines the y axis styles
+  var xAxis = d3.svg.axis().scale(xScale);
+
+  //Creates the yScale
+  var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead (y/n):", "Diabetes (y/n):", "Gender (f/m):"]);
+  //Defines the y axis styles
+  var yAxis = d3.svg.axis().scale(y0).orient("left");
+  var yAxisR = d3.svg.axis().scale(y0).orient("right");
+
+  node.append("g").attr("class", "y axis").call(yAxis);
+  node.append("g").attr("class", "y axis axis-r").call(yAxisR);
+  node.append("g").attr("class", "x axis").call(xAxis);
+
+  var bars = node.append("svg")
+    .attr("width", width2 + margin.left + margin.right)
+    .attr("height", height2 + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .selectAll(".g-category-group")
+      .data(nodeData)
+      .enter()
+      .append("g")
+      .attr("transform", function(d) {
+        return "translate(0," + y0(d.category) + ")";
+      });
+  bars.append("rect")
+    .attr("width", function(d) { return xScale(d.num2); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num2")
+    .attr("transform", "translate(0,2)");
+  bars.append("rect")
+    .attr("width", function(d) { return xScale(d.num); })
+    .attr("height", barHeight - 1 )
+    .attr("class", "g-num")
+    .attr("transform", "translate(0,2)");
+
+   bars.append("text")
+      .attr("y", 13 )
+      .attr("x", 4)
+      .style("fill", function(d){ return "#000"; })
+      .attr("font-size", "12px")
+      .text(function(d) { return Math.round(d.num * 100) / 100  + "%";});
+
+}
+
+    </script>
+  </body>
+</html>
