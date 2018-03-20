@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <title>Zoom Icicle</title>
     <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
-    <!-- <script type="text/javascript" src="backend/fullDiagnosisAttrs.json"></script> -->
     <style>
       rect { stroke: #fff; }
     </style>
@@ -90,7 +89,7 @@
     function init() {
 
       // url (required), options (optional)
-      fetch('backend/dfa.json', {
+      fetch('data/dfa.json', {
           method: 'get'
       }).then(function(response) {
         return response.json();
@@ -105,7 +104,7 @@
 
     function drawIcicleGraph() {
 
-      d3.json("backend/result.json", function(error, root) {
+      d3.json("data/result.json", function(error, root) {
 
         if (error) throw error;
 
@@ -189,7 +188,9 @@
       // current node and all children
       d3.selectAll("[class^='" + d3.select(this).attr('class') + "']").each(function(d,i) {
         if(x(d.x + d.dx) - x(d.x) > 200) {
-          showDiagnosisAnnotation(d3.select(this));
+          var that = this
+          setTimeout(function(){ showDiagnosisAnnotation(d3.select(that)); }, 500);
+
         }
       });
 
@@ -206,55 +207,43 @@
 
 function getNodeData(diagnosis) {
 
-
   var d = diagnosisAttrs[diagnosis];
-  console.log('getNodeData d',d);
 
   if (d === undefined) {
     return [
-      {"category":"-","num":0, "num2": 100},
-      {"category":"-","num":0, "num2": 100},
-      {"category":"-","num":0, "num2": 100}
+      {"category":"-","num":0},
+      {"category":"-","num":0},
+      {"category":"-","num":0}
     ];
   } else {
     return [
-      {"category":"Dead (y/n):","num":d.lifeStatus.deadPercent, "num2": 100},
-      {"category":"Diabetes (y/n):","num":d.diabetes.yesPercent, "num2": 100},
-      {"category":"Gender (f/m):","num":d.gender.femalePercent, "num2": 100}
+      {"category":"Dead (y/n):","num":d.lifeStatus.deadPercent},
+      {"category":"Diabetes (y/n):","num":d.diabetes.yesPercent},
+      {"category":"Gender (f/m):","num":d.gender.femalePercent}
     ];
   }
 }
-
+var nodeData;
 function showDiagnosisAnnotation(node) {
-console.log(1);
-  if (!node.select('svg').empty()) node.select('svg').remove();
-  if (!node.select('g').empty()) node.select('g').remove();
 
-  var margin = {top: 30, right: 10, bottom: 0, left: 94};
-  var width2 =   250 - margin.left - margin.right,
-    height2 = 100 - margin.top - margin.bottom;
-  var barHeight = 16;
+  // if (!node.select('svg').empty()) node.select('svg').remove();
+  // if (!node.select('g').empty()) node.select('g').remove();
 
-  var nodeData = getNodeData(node.attr('class'));
-console.log(2,nodeData);
+  var margin = {top: 30, right: 10, bottom: 0, left: 100};
+  var width2 = 150, height2 = 70, barHeight = 16;
+
+ nodeData = getNodeData(node.attr('class'));
+
   //Creates the xScale
   var xScale = d3.scale.linear().range([0,width2]);
-  var maxX = d3.max(nodeData, function(d) { return d.num2; });
-  var minX = d3.min(nodeData, function(d) { return d.num; });
-  //Defines the xScale max
-  xScale.domain([0, maxX ]);
-  //Defines the y axis styles
-  var xAxis = d3.svg.axis().scale(xScale);
+  xScale.domain([0, 100 ]);
 
   //Creates the yScale
   var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead (y/n):", "Diabetes (y/n):", "Gender (f/m):"]);
   //Defines the y axis styles
-  var yAxis = d3.svg.axis().scale(y0).orient("left");
   var yAxisR = d3.svg.axis().scale(y0).orient("right");
 
-  node.append("g").attr("class", "y axis").call(yAxis);
   node.append("g").attr("class", "y axis axis-r").call(yAxisR);
-  node.append("g").attr("class", "x axis").call(xAxis);
 
   var bars = node.append("svg")
     .attr("width", width2 + margin.left + margin.right)
@@ -268,23 +257,25 @@ console.log(2,nodeData);
       .attr("transform", function(d) {
         return "translate(0," + y0(d.category) + ")";
       });
-  bars.append("rect")
-    .attr("width", function(d) { return xScale(d.num2); })
-    .attr("height", barHeight - 1 )
-    .attr("class", "g-num2")
-    .attr("transform", "translate(0,2)");
-  bars.append("rect")
-    .attr("width", function(d) { return xScale(d.num); })
-    .attr("height", barHeight - 1 )
-    .attr("class", "g-num")
-    .attr("transform", "translate(0,2)");
-
+  // bars.append("rect")
+  //   .attr("width", function(d) { return xScale(100); })
+  //   .attr("height", barHeight - 1 )
+  //   .attr("class", "g-num2");
+  // bars.append("rect")
+  //   .attr("width", function(d) { return xScale(d.num); })
+  //   .attr("height", barHeight - 1 )
+  //   .attr("class", "g-num");
+console.log(1);
    bars.append("text")
-      .attr("y", 13 )
-      .attr("x", 4)
-      .style("fill", function(d){ return "#000"; })
-      .attr("font-size", "12px")
-      .text(function(d) { return Math.round(d.num * 100) / 100  + "%";});
+      // .attr("y", 13 )
+      // .attr("x", 4)
+      // .style("fill", function(d){ return "#fff"; })
+      // .attr("font-size", "12px")
+      .text("hallo")
+      // .text(function(d) {console.log(2);
+      //   return "lalal";
+        // return Math.round(d.num * 100) / 100  + "%";
+      // });
 
 }
 

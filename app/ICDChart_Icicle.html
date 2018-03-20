@@ -177,7 +177,8 @@ $(document).ready(function() {
     // current node and all children
     d3.selectAll("[class^='" + d3.select(this).attr('class') + "']").each(function(d,i) {
       if(x(d.x + d.dx) - x(d.x) > 200) {
-        showDiagnosisAnnotation(d3.select(this));
+        var that = this
+        setTimeout(function(){ showDiagnosisAnnotation(d3.select(that)); }, 500);
       }
     });
 
@@ -204,9 +205,9 @@ if (d === undefined) {
   ];
 } else {
   return [
-    {"category":"Dead (y/n):","num":d.lifeStatus.deadPercent, "num2": 100},
-    {"category":"Diabetes (y/n):","num":d.diabetes.yesPercent, "num2": 100},
-    {"category":"Gender (f/m):","num":d.gender.femalePercent, "num2": 100}
+    {"category":"lifeStatus","num":d.lifeStatus.deadPercent, "num2": 100},
+    {"category":"hasDiabetes","num":d.diabetes.yesPercent, "num2": 100},
+    {"category":"gender","num":d.gender.femalePercent, "num2": 100}
   ];
 }
 }
@@ -216,13 +217,12 @@ function showDiagnosisAnnotation(node) {
 if (!node.select('svg').empty()) node.select('svg').remove();
 if (!node.select('g').empty()) node.select('g').remove();
 
-var margin = {top: 30, right: 10, bottom: 0, left: 94};
-var width2 =   250 - margin.left - margin.right,
+var margin = {top: 30, right: 10, bottom: 0, left: 65};
+var width2 =   200 - margin.left - margin.right,
   height2 = 100 - margin.top - margin.bottom;
 var barHeight = 16;
 
 var nodeData = getNodeData(node.attr('class'));
-console.log(2,node.attr('class'),nodeData);
 //Creates the xScale
 var xScale = d3.scale.linear().range([0,width2]);
 var maxX = d3.max(nodeData, function(d) { return d.num2; });
@@ -233,14 +233,19 @@ xScale.domain([0, maxX ]);
 var xAxis = d3.svg.axis().scale(xScale);
 
 //Creates the yScale
-var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead (y/n):", "Diabetes (y/n):", "Gender (f/m):"]);
+var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["lifeStatus", "hasDiabetes", "gender"]);
+var yR = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead", "Diabetes", "Female"]);
+var yL = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Alive", "No Diabetes", "Male"]);
 //Defines the y axis styles
-var yAxis = d3.svg.axis().scale(y0).orient("left");
-var yAxisR = d3.svg.axis().scale(y0).orient("right");
+var yAxis = d3.svg.axis().scale(yL).orient("left");
+var yAxisR = d3.svg.axis().scale(yR).orient("right");
 
-node.append("g").attr("class", "y axis").call(yAxis);
+node.append("g").attr("class", "y axis")
+  .attr("text-anchor", "start")
+  .attr("transform", "translate(270,28)")
+  .call(yAxis);
 node.append("g").attr("class", "y axis axis-r").call(yAxisR);
-node.append("g").attr("class", "x axis").call(xAxis);
+// node.append("g").attr("class", "x axis").call(xAxis);
 
 var bars = node.append("svg")
   .attr("width", width2 + margin.left + margin.right)
