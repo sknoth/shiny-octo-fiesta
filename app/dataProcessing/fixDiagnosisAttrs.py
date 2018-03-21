@@ -60,9 +60,44 @@ for key in dKeys:
                     dfa[key]['gender']['femalePercent'] = 100 - dfa[key]['gender']['malePercent']           
                 
                 dfa[key]['lengthOfStay'] = v['lengthOfStay'] / count
-                
-                if key == 'I':
-                    print(dfa[key]['gender']['malePercent'],dfa[key]['gender']['femalePercent'])
+
+count = 0   
+
+dfa['diagnosis'] = {
+    'lifeStatus': {'dead':0,'alive':0,'deadPercent':0,'alivePercent':0},
+    'gender': {'male':0,'female':0,'malePercent':0,'femalePercent':0},
+    'diabetes': {'yes':0,'no':0,'yesPercent':0,'noPercent':0},
+    'lengthOfStay': 0
+}     
+        
+for key in dKeys:
+
+    if len(key) == 1:
+        
+        count += 1
+        
+        dfa['diagnosis']['lifeStatus']['dead'] += dfa[key]['lifeStatus']['dead']
+        dfa['diagnosis']['lifeStatus']['alive'] += dfa[key]['lifeStatus']['alive']
+        dfa['diagnosis']['diabetes']['no'] += dfa[key]['diabetes']['no']
+        dfa['diagnosis']['diabetes']['yes'] += dfa[key]['diabetes']['yes']
+        dfa['diagnosis']['gender']['male'] += dfa[key]['gender']['male']
+        dfa['diagnosis']['gender']['female'] += dfa[key]['gender']['female']
+        dfa['diagnosis']['lengthOfStay'] += dfa[key]['lengthOfStay']
+        
+if count > 0:
+    
+    if dfa['diagnosis']['lifeStatus']['dead']+dfa['diagnosis']['lifeStatus']['alive'] > 0:
+        dfa['diagnosis']['lifeStatus']['deadPercent'] = 1.0 * dfa['diagnosis']['lifeStatus']['dead'] / (dfa['diagnosis']['lifeStatus']['dead']+dfa['diagnosis']['lifeStatus']['alive']) * 100
+        dfa['diagnosis']['lifeStatus']['alivePercent'] = 100 - dfa['diagnosis']['lifeStatus']['deadPercent']
+    if dfa['diagnosis']['diabetes']['no']+dfa['diagnosis']['diabetes']['yes'] > 0:                
+        dfa['diagnosis']['diabetes']['noPercent'] = 1.0 * dfa['diagnosis']['diabetes']['no'] / (dfa['diagnosis']['diabetes']['no']+dfa['diagnosis']['diabetes']['yes']) * 100
+        dfa['diagnosis']['diabetes']['yesPercent'] = 100 - dfa['diagnosis']['diabetes']['noPercent']
+    if dfa['diagnosis']['gender']['female']+dfa['diagnosis']['gender']['male'] > 0:                
+        dfa['diagnosis']['gender']['malePercent'] = 1.0 * dfa['diagnosis']['gender']['male'] / (dfa['diagnosis']['gender']['female']+dfa['diagnosis']['gender']['male']) * 100
+        dfa['diagnosis']['gender']['femalePercent'] = 100 - dfa['diagnosis']['gender']['malePercent']           
+    
+    dfa['diagnosis']['lengthOfStay'] = v['lengthOfStay'] / count
+        
 
 with open('dfa.json', 'wb') as outfile:
     json.dump(dfa, outfile)

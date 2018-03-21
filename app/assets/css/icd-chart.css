@@ -1,8 +1,10 @@
 rect { stroke: #fff; }
 body {
-  font-family: "Proxima-Nova",Arial,Helvetica,sans-serif;
-  font-size: 12px;
+    font-family: "Proxima-Nova",Arial,Helvetica,sans-serif;
+    font-size: 12px;
 }
+
+.icd-chart { overflow-x: scroll; }
 
 .g-num { fill:#c12726; }
 .g-num2 { fill:#e0e0e0; }
@@ -11,13 +13,38 @@ body {
 .y.axis line,
 .x.axis text,
 .domain {
-  display: none;
+    display: none;
 }
 
 .y.axis text {
-  fill: #000;
+    fill: #000;
 }
 .y.axis-r text {
-  transform: translateX(10px);
-  transform: translateY(28px);
+    transform: translateX(10px);
+    transform: translateY(28px);
+}
+
+.content { margin-top: 1em; }
+
+.col-typeahead { height: 76px; }
+
+.zoom-form {
+    flex-flow: column wrap;
+}
+
+.zoom-form label {
+    align-self: left;
+    padding-left: 50px;
+    padding-bottom: .5rem;
+}
+
+.zoom-form .oi {
+    font-size: 20px;
+    padding: 1px 0 2px 0;
+}
+.zoom-form button:first-of-type {
+    margin-right: 4px;
+}
+.zoom-form button:last-of-type {
+    margin-left: 4px;
 }
