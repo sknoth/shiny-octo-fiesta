@@ -6,23 +6,7 @@ body {
 
 .icd-chart { overflow-x: scroll; }
 
-.g-num { fill:#c12726; }
-.g-num2 { fill:#e0e0e0; }
 
-.x.axis line,
-.y.axis line,
-.x.axis text,
-.domain {
-    display: none;
-}
-
-.y.axis text {
-    fill: #000;
-}
-.y.axis-r text {
-    transform: translateX(10px);
-    transform: translateY(28px);
-}
 
 .content { margin-top: 1em; }
 
@@ -47,4 +31,37 @@ body {
 }
 .zoom-form button:last-of-type {
     margin-left: 4px;
+}
+
+.annotation {
+    transform: translate(5px,5px);
+}
+
+.annotation>rect {
+    fill: #fff;
+    opacity: .7;
+}
+
+.diagnosis-text {
+    font-size: 16px;
+    text-transform: capitalize;
+    transform: translate(10px,20px);
+}
+
+.g-num { fill:#98c9fe; }
+.g-num2 { fill:#e0e0e0; }
+
+.x.axis line,
+.y.axis line,
+.x.axis text,
+.domain {
+    display: none;
+}
+
+.y.axis text {
+    fill: #000;
+}
+.y.axis-r text {
+    transform: translateX(10px);
+    transform: translateY(28px);
 }

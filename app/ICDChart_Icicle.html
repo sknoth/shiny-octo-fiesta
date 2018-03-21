@@ -176,7 +176,7 @@ $(document).ready(function() {
             .attr("transform", function(d) {
                 return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
             })
-            .selectAll('rect')
+            .selectAll('.diagnosis-box')
             .attr("width", function(d) {
                 return x(d.x + d.dx) - x(d.x);
             })
@@ -204,31 +204,48 @@ $(document).ready(function() {
             group.append("rect")
             .attr("width", function(d) { return x(d.dx); })
             .attr("height", function(d) { return y(d.dy); })
-            .style("fill", function(d) { return colorize(d); })
-            .style("fill-rule", "evenodd");
+            .attr("class","diagnosis-box")
+            .style("fill", function(d) { return colorize(d); });
 
-            group.each(function(d,i) {
+
+            annotationGroup = group.append("g")
+                .attr("class","annotation");
+
+            annotationGroup.append("rect")
+                .attr("width", function(d) {
+                    var w = 0;
+                    if (x(d.dx) < 260 && x(d.dx) > 35) {
+                        w = x(d.dx) - 10;
+                    } else if (x(d.dx) > 260) {
+                        w = 250
+                    }
+                    return w;
+                })
+                .attr("height", function(d) {
+                    var h = 120;
+                    if (x(d.dx) < 260) {
+                        h = 30;
+                    }
+                    return h;
+                })
+
+            annotationGroup.each(function(d,i) {
 
                 diagnosisArr.push({id: d.key, name: d.key, d: d});
 
-                if (x(d.dx) > 200) {
+                if (x(d.dx) > 260) {
                     showDiagnosisAnnotation(d3.select(this));
                 }
             });
 
-            group.append("text")
-            .attr("y", function(d) { return 20; })
-            .attr("x", function(d) { return 10; })
-            .attr("width", function(d) { return x(d.dx); })
-            .attr("height", function(d) { return y(d.dy); })
-            .attr("font-family", "sans-serif")
-            .attr("font-size", "16px")
-            .text(function(d) {
-                if (x(d.dx) > 35) {
-                    return d.key;
-                } else {
-                    return '';
-                }
+            annotationGroup.append("text")
+                .attr("class","diagnosis-text")
+                .text(function(d) {
+                    if (x(d.dx) > 35) {
+                        return d.key;
+                    } else {
+                        return '';
+                    }
 
             });
         });
@@ -262,16 +279,15 @@ $(document).ready(function() {
         y.domain([d.y, 1]).range([d.y ? 20 : 0, height]);
 
         group.transition()
-        .duration(750)
-        .attr("transform", function(d) {
-            return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
-        })
-        .selectAll('rect')
-        .attr("width", function(d) {
-            return x(d.x + d.dx) - x(d.x); })
-        .attr("height", function(d) {
-            return y(d.y + d.dy) - y(d.y); });
-            ;
+            .duration(750)
+            .attr("transform", function(d) {
+                return 'translate(' + x(d.x) + ', ' + y(d.y) +')'
+            })
+            .selectAll('.diagnosis-box')
+            .attr("width", function(d) {
+                return x(d.x + d.dx) - x(d.x); })
+            .attr("height", function(d) {
+                return y(d.y + d.dy) - y(d.y); });
 
         // current node and all children
         var nodeSelector = "[class^='" + d.key + "']";
@@ -279,14 +295,34 @@ $(document).ready(function() {
             nodeSelector = "svg>g";
         }
         d3.selectAll(nodeSelector).each(function(d,i) {
-            if(x(d.x + d.dx) - x(d.x) > 200) {
+
+            if(x(d.x + d.dx) - x(d.x) > 260) {
                 var that = this;
-                setTimeout(function(){ showDiagnosisAnnotation(d3.select(that)); }, 500);
+                setTimeout(function(){
+                    showDiagnosisAnnotation(d3.select(that));
+                }, 500);
             }
         });
 
+        annotationGroup.selectAll("rect")
+            .attr("width", function(d) {
+                var w = 0;
+                if ((x(d.x + d.dx) - x(d.x)) < 260 && (x(d.x + d.dx) - x(d.x)) > 35) {
+                    w = x(d.x + d.dx) - x(d.x) - 10;
+                } else if ((x(d.x + d.dx) - x(d.x)) > 260) {
+                    w = 250;
+                }
+                return w;
+            })
+            .attr("height", function(d) {
+                var h = 120;
+                if ((x(d.x + d.dx) - x(d.x)) < 260) {
+                    h = 30;
+                }
+                return h;
+            });
 
-        group.selectAll('text').text(function(d) {
+        annotationGroup.selectAll('text').text(function(d) {
             if ((x(d.x + d.dx) - x(d.x)) > 40) {
                 return d.key;
             } else {
@@ -297,100 +333,95 @@ $(document).ready(function() {
     }
 
 
-            function getNodeData(diagnosis) {
+    function getNodeData(diagnosis) {
 
-                var d = diagnosisAttrs[diagnosis];
+        var d = diagnosisAttrs[diagnosis];
 
-                if (d === undefined) {
-                    return [
-                        {"category":"-","num":0, "num2": 100},
-                        {"category":"-","num":0, "num2": 100},
-                        {"category":"-","num":0, "num2": 100}
-                    ];
-                } else {
-                    return [
-                        {"category":"lifeStatus","num":d.lifeStatus.deadPercent, "num2": 100},
-                        {"category":"hasDiabetes","num":d.diabetes.yesPercent, "num2": 100},
-                        {"category":"gender","num":d.gender.femalePercent, "num2": 100}
-                    ];
-                }
-            }
+        if (d === undefined) {
+            return [
+                {"category":"-","num":0, "num2": 100},
+                {"category":"-","num":0, "num2": 100},
+                {"category":"-","num":0, "num2": 100}
+            ];
+        } else {
+            return [
+                {"category":"lifeStatus","num":d.lifeStatus.deadPercent, "num2": 100},
+                {"category":"hasDiabetes","num":d.diabetes.yesPercent, "num2": 100},
+                {"category":"gender","num":d.gender.femalePercent, "num2": 100}
+            ];
+        }
+    }
 
-            function showDiagnosisAnnotation(node) {
+    function showDiagnosisAnnotation(n) {
 
-                if (!node.select('svg').empty()) node.select('svg').remove();
-                if (!node.select('g').empty()) node.select('g').remove();
+        var node = n.select('.annotation');
 
-                var margin = {top: 30, right: 10, bottom: 0, left: 65};
-                var width2 =   200 - margin.left - margin.right,
-                height2 = 100 - margin.top - margin.bottom;
-                var barHeight = 16;
+        if (!node.select('svg').empty()) node.select('svg').remove();
+        if (!node.select('g').empty()) node.select('g').remove();
 
-                var nodeData = getNodeData(node.attr('class'));
-                //Creates the xScale
-                var xScale = d3.scale.linear().range([0,width2]);
-                var maxX = d3.max(nodeData, function(d) { return d.num2; });
-                var minX = d3.min(nodeData, function(d) { return d.num; });
-                //Defines the xScale max
-                xScale.domain([0, maxX ]);
-                //Defines the y axis styles
-                var xAxis = d3.svg.axis().scale(xScale);
+        var margin = {top: 30, right: 10, bottom: 0, left: 100};
+        var width2 =   250 - margin.left - margin.right,
+        height2 = 100 - margin.top - margin.bottom;
+        var barHeight = 16;
 
-                //Creates the yScale
-                var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["lifeStatus", "hasDiabetes", "gender"]);
-                var yR = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead", "Diabetes", "Female"]);
-                var yL = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Alive", "No Diabetes", "Male"]);
-                //Defines the y axis styles
-                var yAxis = d3.svg.axis().scale(yL).orient("left");
-                var yAxisR = d3.svg.axis().scale(yR).orient("right");
+        var nodeData = getNodeData(n.attr('class'));
+        //Creates the xScale
+        var xScale = d3.scale.linear().range([0,width2]);
+        var maxX = d3.max(nodeData, function(d) { return d.num2; });
+        var minX = d3.min(nodeData, function(d) { return d.num; });
+        //Defines the xScale max
+        xScale.domain([0, maxX ]);
+        //Defines the y axis styles
+        var xAxis = d3.svg.axis().scale(xScale);
 
-                node.append("g").attr("class", "y axis")
-                .attr("text-anchor", "start")
-                .attr("transform", "translate(270,28)")
-                .call(yAxis);
-                node.append("g").attr("class", "y axis axis-r").call(yAxisR);
-                // node.append("g").attr("class", "x axis").call(xAxis);
+        //Creates the yScale
+        var y0 = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["lifeStatus", "hasDiabetes", "gender"]);
+        var yR = d3.scale.ordinal().rangeBands([70, 0], 0).domain(["Dead (Y/N):", "Diabetes (Y/N):", "Gender(F/M):"]);
+        //Defines the y axis styles
+        var yAxisR = d3.svg.axis().scale(yR).orient("right");
 
-                var bars = node.append("svg")
-                .attr("width", width2 + margin.left + margin.right)
-                .attr("height", height2 + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-                .selectAll(".g-category-group")
-                .data(nodeData)
-                .enter()
-                .append("g")
-                .attr("transform", function(d) {
-                    return "translate(0," + y0(d.category) + ")";
-                });
-                bars.append("rect")
-                .attr("width", function(d) { return xScale(d.num2); })
-                .attr("height", barHeight - 1 )
-                .attr("class", "g-num2")
-                .attr("transform", "translate(0,2)");
-                bars.append("rect")
-                .attr("width", function(d) { return xScale(d.num); })
-                .attr("height", barHeight - 1 )
-                .attr("class", "g-num")
-                .attr("transform", "translate(0,2)");
+        node.append("g").attr("class", "y axis axis-r").call(yAxisR);
 
-                bars.append("text")
-                .attr("y", 13 )
-                .attr("x", 4)
-                .style("fill", function(d){ return "#000"; })
-                .attr("font-size", "12px")
-                .text(function(d) { return Math.round(d.num * 100) / 100  + "%";});
-
-            }
-
-            setTimeout(function(){
-                $(".typeahead").typeahead({
-                    minLength: 1,
-                    source: diagnosisArr,
-                    afterSelect: function(item) { selectDiagnosis(item.d) },
-                });
-            }, 1000);
-
+        var bars = node.append("svg")
+        .attr("width", width2 + margin.left + margin.right)
+        .attr("height", height2 + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .selectAll(".g-category-group")
+        .data(nodeData)
+        .enter()
+        .append("g")
+        .attr("transform", function(d) {
+            return "translate(0," + y0(d.category) + ")";
         });
+        bars.append("rect")
+        .attr("width", function(d) { return xScale(d.num2); })
+        .attr("height", barHeight - 1 )
+        .attr("class", "g-num2")
+        .attr("transform", "translate(0,2)");
+        bars.append("rect")
+        .attr("width", function(d) { return xScale(d.num); })
+        .attr("height", barHeight - 1 )
+        .attr("class", "g-num")
+        .attr("transform", "translate(0,2)");
+
+        bars.append("text")
+        .attr("y", 13 )
+        .attr("x", 4)
+        .style("fill", function(d){ return "#000"; })
+        .attr("font-size", "12px")
+        .text(function(d) { return Math.round(d.num * 100) / 100  + "%";});
+
+    }
+
+        setTimeout(function(){
+            $(".typeahead").typeahead({
+                minLength: 1,
+                source: diagnosisArr,
+                afterSelect: function(item) { selectDiagnosis(item.d) },
+            });
+        }, 1000);
+
+    });
     </script>
-    </html>
+</html>
